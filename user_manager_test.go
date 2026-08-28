@@ -39,7 +39,7 @@ func TestUserManager(t *testing.T) {
 	err = conn.Ping()
 	require.NoError(t, err)
 
-	um, err := NewUserManager("localhost:3050", GetTestUser(), GetTestPassword(), NewServiceManagerOptions(), NewUserManagerOptions())
+	um, err := NewUserManager(testServerAddr(), GetTestUser(), GetTestPassword(), NewServiceManagerOptions(), NewUserManagerOptions())
 	require.NoError(t, err, "NewUserManager")
 	require.NotNil(t, um, "NewUserManager")
 	defer um.Close()

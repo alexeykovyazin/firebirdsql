@@ -76,7 +76,7 @@ var (
 )
 
 func get_firebird_major_version(t *testing.T) int {
-	sm, err := NewServiceManager("localhost:3050", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	sm, err := NewServiceManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err)
 	require.NotNil(t, sm)
 	defer sm.Close()
@@ -109,7 +109,7 @@ func GetTestDSNFromDatabaseUserPassword(dbPath string, testUser string, testPass
 	if runtime.GOOS == "windows" {
 		dbPath = "/" + dbPath
 	}
-	return testUser + ":" + testPassword + "@localhost:3050" + dbPath
+	return testUser + ":" + testPassword + "@" + testServerAddr() + dbPath
 }
 
 func GetTestUser() string {
@@ -1911,11 +1911,11 @@ func TestIssue264(t *testing.T) {
 }
 
 func TestAuth(t *testing.T) {
-	conn, err := sql.Open("firebirdsql", GetTestUser()+":wrongpassword@localhost/employee")
+	conn, err := sql.Open("firebirdsql", GetTestUser()+":wrongpassword@"+testServerAddr()+"/employee")
 	err = conn.Ping()
 	assert.EqualError(t, err, "Your user name and password are not defined. Ask your database administrator to set up a Firebird login.\n")
 
-	conn, err = sql.Open("firebirdsql", "notexisting:wrongpassword@localhost/employee")
+	conn, err = sql.Open("firebirdsql", "notexisting:wrongpassword@"+testServerAddr()+"/employee")
 	err = conn.Ping()
 	assert.EqualError(t, err, "Your user name and password are not defined. Ask your database administrator to set up a Firebird login.\n")
 }

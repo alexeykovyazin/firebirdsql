@@ -43,7 +43,7 @@ func TestNBackupManagerSingleLevel(t *testing.T) {
 	_, err = conn.Exec("insert into test values(123)")
 	require.NoError(t, err, "Exec")
 
-	bm, err := NewNBackupManager("localhost", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	bm, err := NewNBackupManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewBackupManager")
 	require.NotNil(t, bm, "NewBackupManager")
 
@@ -84,7 +84,7 @@ func TestNBackupManagerFixup(t *testing.T) {
 	_, err = conn.Exec("insert into test values(123)")
 	require.NoError(t, err, "Exec")
 
-	bm, err := NewNBackupManager("localhost", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	bm, err := NewNBackupManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewBackupManager")
 	require.NotNil(t, bm, "NewBackupManager")
 
@@ -123,7 +123,7 @@ func TestNBackupManagerIncremental(t *testing.T) {
 	_, err = conn.Exec("insert into test values(123)")
 	require.NoError(t, err, "Exec")
 
-	bm, err := NewNBackupManager("localhost", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	bm, err := NewNBackupManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewBackupManager")
 	require.NotNil(t, bm, "NewBackupManager")
 

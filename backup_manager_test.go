@@ -20,7 +20,7 @@ func TestBackupManager(t *testing.T) {
 	_, err = conn.Exec("insert into test values(123)")
 	require.NoError(t, err, "Exec")
 
-	bm, err := NewBackupManager("localhost", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	bm, err := NewBackupManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewBackupManager")
 	require.NotNil(t, bm, "NewBackupManager")
 

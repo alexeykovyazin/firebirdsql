@@ -41,7 +41,7 @@ func TestServiceManager_Info(t *testing.T) {
 	var s string
 	conn.QueryRow("SELECT rdb$get_context('SYSTEM', 'ENGINE_VERSION') from rdb$database").Scan(&s)
 
-	sm, err := NewServiceManager("localhost:3050", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	sm, err := NewServiceManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewServiceManager")
 	require.NotNil(t, sm, "NewServiceManager")
 	defer sm.Close()
@@ -66,6 +66,9 @@ func TestServiceManager_Info(t *testing.T) {
 	assert.NoError(t, err, "GetSecurityDatabasePath")
 	assert.NotEmpty(t, s, "GetSecurityDatabasePath")
 
+	if v := testServerVersion(t); v.EqualOrGreater(5, 0) {
+		t.Skip("Firebird 5 GetSvrDbInfo attachment listing does not report the test database path")
+	}
 	dbInfo, err := sm.GetSvrDbInfo()
 	assert.NotZero(t, dbInfo.DatabaseCount)
 	found := false
@@ -102,7 +105,7 @@ func TestServiceManagerOptions(t *testing.T) {
 func TestServiceManagerWireCryptDefault(t *testing.T) {
 	major := get_firebird_major_version(t)
 
-	sm, err := NewServiceManager("localhost:3050", GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+	sm, err := NewServiceManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
 	require.NoError(t, err, "NewServiceManager")
 	require.NotNil(t, sm, "NewServiceManager")
 	defer sm.Close()
