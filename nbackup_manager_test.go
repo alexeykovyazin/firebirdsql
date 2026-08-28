@@ -31,6 +31,7 @@ import (
 )
 
 func TestNBackupManagerSingleLevel(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPathOrig := GetTestDatabase("test_nbackup_manager_orig_")
 	dbBackup := GetTestBackup("test_nbackup_manager_")
 	dbPathRest := GetTestDatabase("test_nbackup_manager_rest_")
@@ -69,6 +70,7 @@ func TestNBackupManagerSingleLevel(t *testing.T) {
 }
 
 func TestNBackupManagerFixup(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 4 {
 		t.Skip("fixup in Service Manager API supported since 4.0")
 	}
@@ -110,6 +112,7 @@ func TestNBackupManagerFixup(t *testing.T) {
 }
 
 func TestNBackupManagerIncremental(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPathOrig := GetTestDatabase("test_nbackup_manager_orig_")
 	dbBackup0 := GetTestBackup("test_nbackup_manager_")
 	dbBackup1 := GetTestBackup("test_nbackup_manager_")
@@ -163,6 +166,7 @@ func TestNBackupManagerIncremental(t *testing.T) {
 }
 
 func TestNBackupOptions(t *testing.T) {
+	requireServiceAvailable(t)
 	opts := NewNBackupOptions()
 	assert.Equal(t, int32(-1), opts.Level)
 	assert.Equal(t, "", opts.Guid)

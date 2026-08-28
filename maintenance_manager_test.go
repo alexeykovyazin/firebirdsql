@@ -71,6 +71,7 @@ func getFirebirdLog(t *testing.T) string {
 }
 
 func TestServiceManager_Sweep(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 3 {
 		t.Skip("skip for 2.5, because it running in container")
 	}
@@ -96,6 +97,7 @@ OIT xxx, OAT xxx, OST xxx, Next xxx`)
 }
 
 func TestServiceManager_Validate(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 3 {
 		t.Skip("skip for 2.5, because it running in container")
 	}
@@ -127,6 +129,7 @@ Validation finished: x errors, x warnings, x fixed`)
 }
 
 func TestServiceManager_Mend(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 3 {
 		t.Skip("skip for 2.5, because it running in container")
 	}
@@ -149,6 +152,7 @@ Validation finished: x errors, x warnings, x fixed`)
 }
 
 func TestServiceManager_ListLimboTransactions(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_list_limbo_")
 	require.NoError(t, err)
 
@@ -160,6 +164,7 @@ func TestServiceManager_ListLimboTransactions(t *testing.T) {
 }
 
 func TestServiceManager_CommitTransaction(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_commit_transaction_")
 	require.NoError(t, err)
 
@@ -183,6 +188,7 @@ transaction 1 is committed
 }
 
 func TestServiceManager_RollbackTransaction(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_rollback_transaction_")
 	require.NoError(t, err)
 
@@ -206,6 +212,7 @@ transaction 1 is committed
 }
 
 func TestServiceManager_SetDatabaseMode(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_mode_")
 	require.NoError(t, err)
 
@@ -219,6 +226,7 @@ func TestServiceManager_SetDatabaseMode(t *testing.T) {
 }
 
 func TestServiceManager_SetDatabaseDialect(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_dialect_")
 	require.NoError(t, err)
 
@@ -234,6 +242,7 @@ func TestServiceManager_SetDatabaseDialect(t *testing.T) {
 }
 
 func TestServiceManager_SetPageBuffers(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_buffers_")
 	require.NoError(t, err)
 
@@ -249,6 +258,7 @@ func TestServiceManager_SetPageBuffers(t *testing.T) {
 }
 
 func TestServiceManager_SetWriteMode(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_write_mode_")
 	require.NoError(t, err)
 
@@ -262,6 +272,7 @@ func TestServiceManager_SetWriteMode(t *testing.T) {
 }
 
 func TestServiceManager_SetPageFill(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_page_fill_")
 	require.NoError(t, err)
 
@@ -275,6 +286,7 @@ func TestServiceManager_SetPageFill(t *testing.T) {
 }
 
 func TestServiceManager_DatabaseShutdown(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_shutdown_")
 	require.NoError(t, err)
 
@@ -291,6 +303,7 @@ func TestServiceManager_DatabaseShutdown(t *testing.T) {
 }
 
 func TestServiceManager_DatabaseShutdownEx(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_shutdown_ex_")
 	require.NoError(t, err)
 
@@ -305,6 +318,7 @@ func TestServiceManager_DatabaseShutdownEx(t *testing.T) {
 }
 
 func TestServiceManager_SetSweepInterval(t *testing.T) {
+	requireServiceAvailable(t)
 	db, _, err := CreateTestDatabase("test_set_sweep_interval_")
 	require.NoError(t, err)
 
@@ -317,6 +331,7 @@ func TestServiceManager_SetSweepInterval(t *testing.T) {
 }
 
 func TestServiceManager_SetReplicaMode(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 4 {
 		t.Skip("replica mode requires Firebird 4.0 or newer")
 	}
@@ -335,6 +350,7 @@ func TestServiceManager_SetReplicaMode(t *testing.T) {
 }
 
 func TestServiceManager_NoLinger(t *testing.T) {
+	requireServiceAvailable(t)
 	if get_firebird_major_version(t) < 3 {
 		t.Skip("firebird 2.5 do not support isc_spb_prp_nolinger")
 	}

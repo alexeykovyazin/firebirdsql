@@ -1,7 +1,18 @@
 # Jaybird Test Inventory & Test Port Plan for `firebirdsql` (Go)
 
 Generated: 2026-08-27
-**Status: COMPLETE** — all 10 phases implemented (Phases 1–10); every phase verified against a live Firebird 5.0.5 server. Driver fixes that fell out of the port: IPv6 default-port DSN handling, TIME/TIMESTAMP WITH TIME ZONE wire codec + nil-location panic, DSN parse out-of-range panic.
+**Status: COMPLETE** — all 10 phases implemented (Phases 1–10); the full suite verified against Firebird 2.5, 3.0, 4.0 and 5.0 (see matrix below). Driver fixes that fell out of the port: IPv6 default-port DSN handling, TIME/TIMESTAMP WITH TIME ZONE wire codec + nil-location panic, DSN parse out-of-range panic.
+
+### Cross-version validation (local HQbird instances)
+
+| Server | Port | Negotiated protocol | Result | Notes |
+|---|---|---|---|---|
+| Firebird 5.0.5 | 3055 | 19 | ✅ green | reference server; scroll + inline blobs + batch exercised |
+| Firebird 4.0 | 3054 | 17 | ✅ green | batch exercised; scroll/inline skip (protocol gate) |
+| Firebird 3.0 (HQbird) | 3053 | 15 | ✅ green | Services API unavailable → service tests skip via the 15 s attach guard; `wire_crypt=false` connections rejected by server → plaintext case skips |
+| Firebird 2.5.9 HQbird | 3052 | 11 | ✅ green | legacy auth; multi-row RETURNING raises "multiple rows in singleton select" (asserted per version); table identifiers capped at 31 bytes in the matrix |
+
+Known FB4-and-older finding: multi-row `UPDATE/DELETE … RETURNING` fails with "multiple rows in singleton select" (executed as singleton returning) — candidate driver improvement (execute with the cursor flag).
 
 Sources analyzed:
 

@@ -58,7 +58,52 @@ var (
 	testServerVersionOnce  sync.Once
 	testServerVersionValue FirebirdVersion
 	testServerVersionErr   error
+	serviceAttachAvailable bool
 )
+
+// attachServiceWithTimeout performs one Services API attach with a hard
+// timeout: some server configurations (e.g. Firebird Classic on Windows) do
+// not support the Services API and simply never answer, which would hang the
+// suite without the deadline.
+func attachServiceWithTimeout() (*ServiceManager, error) {
+	type result struct {
+		sm  *ServiceManager
+		err error
+	}
+	ch := make(chan result, 1)
+	go func() {
+		sm, err := NewServiceManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
+		ch <- result{sm, err}
+	}()
+	select {
+	case r := <-ch:
+		return r.sm, r.err
+	case <-time.After(15 * time.Second):
+		return nil, fmt.Errorf("service attach timed out after 15s (Services API unavailable on %s?)", testServerAddr())
+	}
+}
+
+// probeServiceAttach resolves the server version and service availability
+// once per test process.
+func probeServiceAttach() {
+	if raw := os.Getenv("FIREBIRD_TEST_SERVER_VERSION"); raw != "" {
+		testServerVersionValue = parseTestVersion(raw)
+		if testServerVersionValue.Major > 0 {
+			serviceAttachAvailable = true
+			return
+		}
+		testServerVersionErr = fmt.Errorf("invalid FIREBIRD_TEST_SERVER_VERSION %q", raw)
+		return
+	}
+	sm, err := attachServiceWithTimeout()
+	if err != nil {
+		testServerVersionErr = err
+		return
+	}
+	defer sm.Close()
+	testServerVersionValue, testServerVersionErr = sm.GetServerVersion()
+	serviceAttachAvailable = testServerVersionErr == nil && testServerVersionValue.Major > 0
+}
 
 // testServerVersion returns the server version, resolved once per test
 // process. Set FIREBIRD_TEST_SERVER_VERSION (e.g. "4.0.2") to pin the version
@@ -66,27 +111,25 @@ var (
 // determined (e.g. no reachable server for the Services API).
 func testServerVersion(t *testing.T) FirebirdVersion {
 	t.Helper()
-	testServerVersionOnce.Do(func() {
-		if raw := os.Getenv("FIREBIRD_TEST_SERVER_VERSION"); raw != "" {
-			testServerVersionValue = parseTestVersion(raw)
-			if testServerVersionValue.Major > 0 {
-				return
-			}
-			testServerVersionErr = fmt.Errorf("invalid FIREBIRD_TEST_SERVER_VERSION %q", raw)
-			return
-		}
-		sm, err := NewServiceManager(testServerAddr(), GetTestUser(), GetTestPassword(), GetDefaultServiceManagerOptions())
-		if err != nil {
-			testServerVersionErr = err
-			return
-		}
-		defer sm.Close()
-		testServerVersionValue, testServerVersionErr = sm.GetServerVersion()
-	})
+	testServerVersionOnce.Do(probeServiceAttach)
 	if testServerVersionErr != nil {
 		t.Skipf("cannot determine server version: %v", testServerVersionErr)
 	}
 	return testServerVersionValue
+}
+
+// requireServiceAvailable skips the test when the Services API is unusable on
+// the target server (attach error or the Classic-on-Windows hang). The probe
+// runs once per test process.
+func requireServiceAvailable(t *testing.T) {
+	t.Helper()
+	testServerVersionOnce.Do(probeServiceAttach)
+	if testServerVersionErr != nil {
+		t.Skipf("Services API unavailable on %s: %v", testServerAddr(), testServerVersionErr)
+	}
+	if !serviceAttachAvailable {
+		t.Skipf("Services API unavailable on %s", testServerAddr())
+	}
 }
 
 func parseTestVersion(raw string) FirebirdVersion {

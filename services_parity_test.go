@@ -49,6 +49,7 @@ func newBackupManagerForTest(t *testing.T) *BackupManager {
 // metadata-only backups carry structure but no data, and WithReplace allows
 // restoring over an existing database.
 func TestBackupOptionsMatrix(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPath, dsn, err := CreateTestDatabase("svc_backup_opt_")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = removeDatabaseFile(dbPath) })
@@ -104,6 +105,7 @@ func TestBackupOptionsMatrix(t *testing.T) {
 // a database holding a large streamed blob must survive a backup/restore round
 // trip with its content intact (gbak "segment buffer length shorter" regression).
 func TestBackupRestoreBlobIntegrity(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPath, dsn, err := CreateTestDatabase("svc_backup_blob_")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = removeDatabaseFile(dbPath) })
@@ -130,6 +132,7 @@ func TestBackupRestoreBlobIntegrity(t *testing.T) {
 // TestStatisticsManagerReports mirrors Jaybird's FBStatisticsManagerTest:
 // header-page and table-scoped statistics reports return meaningful content.
 func TestStatisticsManagerReports(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPath, dsn, err := CreateTestDatabase("svc_stats_")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = removeDatabaseFile(dbPath) })
@@ -167,6 +170,7 @@ func TestStatisticsManagerReports(t *testing.T) {
 // refuses writes until it is switched back to read-write. The database must
 // be unattached while the access mode changes.
 func TestMaintenanceAccessModeParity(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPath, dsn, err := CreateTestDatabase("svc_access_mode_")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = removeDatabaseFile(dbPath) })
@@ -196,6 +200,7 @@ func TestMaintenanceAccessModeParity(t *testing.T) {
 // TestServiceManagerSweepParity mirrors Jaybird's Sweep coverage: a sweep on
 // a healthy database completes without error.
 func TestServiceManagerSweepParity(t *testing.T) {
+	requireServiceAvailable(t)
 	dbPath, dsn, err := CreateTestDatabase("svc_sweep_")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = removeDatabaseFile(dbPath) })

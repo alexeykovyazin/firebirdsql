@@ -27,6 +27,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
@@ -308,12 +309,14 @@ func TestDatatypeMatrix(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
+	for i, c := range cases {
+		c := c
 		t.Run(c.name, func(t *testing.T) {
 			if c.gate != nil {
 				c.gate(t)
 			}
-			table := "TM_" + strings.ToUpper(strings.NewReplacer("(", "", ")", "", ",", "", " ", "_").Replace(c.name))
+			// Short names: Firebird 2.5 limits identifiers to 31 bytes.
+			table := fmt.Sprintf("TM_%02d", i)
 			mustExec(t, dtypeCtx, db, "CREATE TABLE "+table+" (VAL "+c.col+")")
 			t.Cleanup(func() { _, _ = db.Exec("DROP TABLE " + table) })
 
@@ -338,6 +341,7 @@ func randomBytes(n int) []byte {
 // (driver-level subset): every column of a representative result set must
 // report its database type name, scan type, nullability and numeric properties.
 func TestDatatypeColumnMetadata(t *testing.T) {
+	requireBooleanSupport(t) // the fixture table includes a BOOLEAN column
 	db, _, _ := createTestDatabaseWithDDL(t, "dtype_meta_", `
 		CREATE TABLE DTYPE_META (
 			C_SMALL  SMALLINT NOT NULL,

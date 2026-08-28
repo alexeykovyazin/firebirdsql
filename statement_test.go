@@ -147,26 +147,43 @@ func TestReturningEdgeCases(t *testing.T) {
 	db, _, _ := createTestDatabaseWithDDL(t, "stmt_returning_",
 		`CREATE TABLE RET_EDGE (ID INTEGER NOT NULL PRIMARY KEY, NOTE VARCHAR(20), DOC BLOB SUB_TYPE TEXT)`)
 
-	// UPDATE ... RETURNING returns one row per affected row.
 	for i := 1; i <= 3; i++ {
 		mustExec(t, stmtCtx, db, "INSERT INTO RET_EDGE VALUES (?, ?, NULL)", i, "note")
 	}
-	rows, err := db.Query("UPDATE RET_EDGE SET NOTE = 'upd' WHERE ID <= 2 RETURNING ID")
-	require.NoError(t, err)
-	ids := map[int]bool{}
-	for rows.Next() {
-		var id int
-		require.NoError(t, rows.Scan(&id))
-		ids[id] = true
-	}
-	require.NoError(t, rows.Err())
-	require.Equal(t, map[int]bool{1: true, 2: true}, ids)
 
-	// RETURNING of a BLOB column.
+	// Single-row UPDATE ... RETURNING works everywhere.
+	var id int64
 	var doc string
 	require.NoError(t, db.QueryRow(
-		"UPDATE RET_EDGE SET DOC = 'blob doc' WHERE ID = 1 RETURNING DOC").Scan(&doc))
+		"UPDATE RET_EDGE SET NOTE = 'single', DOC = 'blob doc' WHERE ID = 1 RETURNING ID, DOC").Scan(&id, &doc))
+	require.Equal(t, int64(1), id)
 	require.Equal(t, "blob doc", doc)
+
+	// Multi-row UPDATE/DELETE ... RETURNING: Firebird 5 streams every affected
+	// row, while Firebird 4 and older reject the statement with "multiple rows
+	// in singleton select" because it is executed as a singleton returning.
+	// (Candidate driver improvement: execute multi-row RETURNING with the
+	// cursor flag.) Assert the behavior each server version actually has.
+	multiRow := testServerVersion(t).EqualOrGreater(5, 0)
+
+	rows, err := db.Query("UPDATE RET_EDGE SET NOTE = 'upd' WHERE ID <= 2 RETURNING ID")
+	if multiRow {
+		require.NoError(t, err)
+		ids := map[int64]bool{}
+		for rows.Next() {
+			require.NoError(t, rows.Scan(&id))
+			ids[id] = true
+		}
+		require.NoError(t, rows.Err())
+		rows.Close()
+		require.Equal(t, map[int64]bool{1: true, 2: true}, ids)
+	} else {
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "multiple rows in singleton select")
+		var unchanged int
+		require.NoError(t, db.QueryRow("SELECT COUNT(*) FROM RET_EDGE").Scan(&unchanged))
+		require.Equal(t, 3, unchanged, "failed statement must not have updated rows")
+	}
 
 	// RETURNING of a nonexistent column must fail.
 	_, err = db.Query("INSERT INTO RET_EDGE (ID, NOTE) VALUES (9, 'x') RETURNING NO_SUCH_COL")
@@ -174,16 +191,21 @@ func TestReturningEdgeCases(t *testing.T) {
 
 	// DELETE ... RETURNING reports the removed rows.
 	rows, err = db.Query("DELETE FROM RET_EDGE WHERE ID >= 2 RETURNING ID")
-	require.NoError(t, err)
-	deleted := 0
-	for rows.Next() {
-		var id int
-		require.NoError(t, rows.Scan(&id))
-		deleted++
+	if multiRow {
+		require.NoError(t, err)
+		deleted := 0
+		for rows.Next() {
+			require.NoError(t, rows.Scan(&id))
+			deleted++
+		}
+		require.NoError(t, rows.Err())
+		rows.Close()
+		require.Equal(t, 2, deleted)
+	} else {
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "multiple rows in singleton select")
+		mustExec(t, stmtCtx, db, "DELETE FROM RET_EDGE WHERE ID >= 2")
 	}
-	require.NoError(t, rows.Err())
-	rows.Close()
-	require.Equal(t, 2, deleted)
 	require.Equal(t, 1, mustCount(t, db, "RET_EDGE"))
 }
 

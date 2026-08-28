@@ -89,9 +89,12 @@ func TestBlobEdgeCases(t *testing.T) {
 	require.Equal(t, []byte{0xDE, 0xAD}, bin)
 	require.Equal(t, "text 🎉", txt.String)
 
-	// Current contract: an empty []byte parameter is stored as NULL.
+	// An empty []byte parameter stores as SQL NULL on Firebird 5 (protocol
+	// 19) and as an empty blob on Firebird 4 and older — either way it must
+	// never come back as actual content.
 	require.NoError(t, db.QueryRow("SELECT BIN FROM BLOB_EDGE WHERE ID = 4").Scan(&bin))
-	require.Nil(t, bin, "empty []byte parameter is currently stored as NULL")
+	require.True(t, bin == nil || len(bin) == 0,
+		"empty []byte parameter must not produce content, got %d bytes", len(bin))
 
 	// The same parameter can be reused for several inserts.
 	data := randomBytes(5000)
@@ -141,6 +144,10 @@ func TestClobLargeText(t *testing.T) {
 // from the inline-blob cache when the DSN enables it, and everything still
 // works when it is disabled.
 func TestInlineBlobTempDB(t *testing.T) {
+	// Inline blobs require Firebird 5 (protocol 19); gate on the server
+	// version before attaching with the inline-blob DPB options, which older
+	// servers may reject.
+	requireServerVersion(t, 5, 0)
 	dbPath, dsn, err := CreateTestDatabase("blob_inline_")
 	require.NoError(t, err)
 	defer func() { _ = removeDatabaseFile(dbPath) }()
