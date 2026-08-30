@@ -38,6 +38,7 @@ type firebirdDsn struct {
 }
 
 var ErrDsnUserUnknown = errors.New("User unknown")
+var ErrDsnDbNameUnknown = errors.New("Database name unknown")
 
 func newFirebirdDsn() *firebirdDsn {
 	return &firebirdDsn{options: make(map[string]string)}
@@ -64,13 +65,16 @@ func parseDSN(dsns string) (*firebirdDsn, error) {
 		dsn.addr += ":3050"
 	}
 	dsn.dbName = u.Path
-	if !strings.ContainsRune(dsn.dbName[1:], '/') {
+	if len(dsn.dbName) > 1 && !strings.ContainsRune(dsn.dbName[1:], '/') {
 		dsn.dbName = dsn.dbName[1:]
 	}
 
 	//Windows Path
-	if strings.ContainsRune(dsn.dbName[2:], ':') {
+	if len(dsn.dbName) > 2 && strings.ContainsRune(dsn.dbName[2:], ':') {
 		dsn.dbName = dsn.dbName[1:]
+	}
+	if dsn.dbName == "" || dsn.dbName == "/" {
+		return nil, ErrDsnDbNameUnknown
 	}
 
 	m, _ := url.ParseQuery(u.RawQuery)
